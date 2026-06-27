@@ -1,7 +1,24 @@
-import { motion } from "framer-motion";
-import heroBg from "../assets/images/hero-bg.jpg";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import gallery1 from "../assets/images/gallery1.jpg";
+import gallery2 from "../assets/images/gallery2.jpg";
+import gallery3 from "../assets/images/gallery3.jpg";
+
+const SLIDES = [gallery1, gallery2, gallery3];
+const SLIDE_DURATION = 5000; // ms per slide
 
 export default function Hero() {
+  const [current, setCurrent] = useState(0);
+  const [prev, setPrev] = useState(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPrev(current);
+      setCurrent((c) => (c + 1) % SLIDES.length);
+    }, SLIDE_DURATION);
+    return () => clearInterval(timer);
+  }, [current]);
+
   const stats = [
     { icon: "🏆", value: "500+", label: "Matches Played" },
     { icon: "👥", value: "200+", label: "Active Players" },
@@ -14,17 +31,42 @@ export default function Hero() {
       {/* ── HERO SECTION ── */}
       <section id="home" className="relative min-h-screen overflow-hidden">
 
-        {/* Animated Background */}
-        <motion.div
-          animate={{ scale: [1, 1.06, 1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${heroBg})`,
-            backgroundPosition: "center",
-            backgroundSize: "cover",
-          }}
-        />
+        {/* ── SLIDESHOW BACKGROUNDS ── */}
+        {/* Previous slide (fades out) */}
+        {prev !== null && (
+          <motion.div
+            key={`prev-${prev}`}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${SLIDES[prev]})`,
+              backgroundPosition: "center",
+              backgroundSize: "cover",
+            }}
+          />
+        )}
+
+        {/* Current slide (fades in + subtle Ken Burns) */}
+        <AnimatePresence mode="sync">
+          <motion.div
+            key={`slide-${current}`}
+            initial={{ opacity: 0, scale: 1 }}
+            animate={{ opacity: 1, scale: 1.06 }}
+            exit={{ opacity: 0 }}
+            transition={{
+              opacity: { duration: 1.2, ease: "easeInOut" },
+              scale: { duration: SLIDE_DURATION / 1000 + 1.2, ease: "linear" },
+            }}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${SLIDES[current]})`,
+              backgroundPosition: "center",
+              backgroundSize: "cover",
+            }}
+          />
+        </AnimatePresence>
 
         {/* Dark Overlay — heavier on left for text legibility */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/65 to-black/25" />
@@ -135,6 +177,29 @@ export default function Hero() {
               </a>
             </motion.div>
           </motion.div>
+        </div>
+
+        {/* ── SLIDE DOTS ── */}
+        <div className="absolute bottom-20 left-1/2 z-10 -translate-x-1/2 flex gap-2">
+          {SLIDES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setPrev(current); setCurrent(i); }}
+              aria-label={`Go to slide ${i + 1}`}
+              className="relative h-2 overflow-hidden rounded-full transition-all duration-300 focus:outline-none"
+              style={{ width: i === current ? 28 : 8, background: "rgba(255,255,255,0.35)" }}
+            >
+              {i === current && (
+                <motion.span
+                  key={`fill-${current}`}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: SLIDE_DURATION / 1000, ease: "linear" }}
+                  className="absolute inset-0 origin-left rounded-full bg-green-400"
+                />
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Scroll Indicator */}
